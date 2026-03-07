@@ -1,6 +1,18 @@
-# Getting Started with Create React App
+# SMS App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is a TypeScript React app bootstrapped with Create React App and configured with Tailwind CSS.
+
+## Tailwind CSS
+
+Tailwind is set up and ready to use:
+
+- Global directives are in `src/index.css`.
+- Content scanning is configured in `tailwind.config.js`.
+- PostCSS plugins are configured in `postcss.config.js`.
+
+Edit `src/App.tsx` to build UI with Tailwind utility classes.
+
+## Getting Started with Create React App
 
 ## Available Scripts
 

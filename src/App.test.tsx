@@ -2,8 +2,12 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock('./components/SchoolCodeForm', () => function MockSchoolCodeForm() {
+  return <div>Mock School Code Form</div>;
+});
+
+test('renders school code input', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const formElement = screen.getByText(/mock school code form/i);
+  expect(formElement).toBeInTheDocument();
 });
