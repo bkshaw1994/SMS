@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
-import { ChevronsLeft, ChevronsRight, CircleUserRound, LayoutDashboard, LogOut, UserPlus } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, CircleUserRound, LayoutDashboard, LogOut, PlusSquare, UserPlus } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useLogoutMutation } from '../services/schoolApi';
 import { clearAuthSession } from '../utils/authSession';
@@ -39,6 +39,7 @@ function LeftNavBar({ schoolId, role, userName = '' }: LeftNavBarProps) {
     const basePath = `/school/${schoolId}`;
     const normalizedRole = role.trim().toLowerCase();
     const canAccessAddUser = ['superadmin', 'itadmin', 'owner'].includes(normalizedRole);
+    const canAccessSectionClass = ['superadmin', 'itadmin', 'owner'].includes(normalizedRole);
     const navItems = [
         {
             to: `${basePath}/${normalizedRole}/${userName || 'user'}`,
@@ -51,6 +52,15 @@ function LeftNavBar({ schoolId, role, userName = '' }: LeftNavBarProps) {
                     to: `${basePath}/${normalizedRole}/${userName || 'user'}/add-user`,
                     label: 'Add User',
                     icon: UserPlus,
+                },
+            ]
+            : []),
+        ...(canAccessSectionClass
+            ? [
+                {
+                    to: `${basePath}/${normalizedRole}/${userName || 'user'}/add-section-class`,
+                    label: 'Add Section/Class',
+                    icon: PlusSquare,
                 },
             ]
             : []),
