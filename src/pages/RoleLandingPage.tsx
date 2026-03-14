@@ -7,6 +7,7 @@ import OwnerDashboard from '../components/roleDashboards/OwnerDashboard';
 import ParentDashboard from '../components/roleDashboards/ParentDashboard';
 import StudentDashboard from '../components/roleDashboards/StudentDashboard';
 import SuperAdminDashboard from '../components/roleDashboards/SuperAdminDashboard';
+import TeacherDashboard from '../components/roleDashboards/TeacherDashboard';
 import { getAuthSession } from '../utils/authSession';
 
 const normalizeRole = (value: string): string => value.trim().toUpperCase();
@@ -39,6 +40,7 @@ function RoleLandingPage() {
         ITADMIN: <ItAdminDashboard schoolId={schoolId} />,
         STUDENT: <StudentDashboard schoolId={schoolId} />,
         PARENT: <ParentDashboard schoolId={schoolId} />,
+        TEACHER: <TeacherDashboard schoolId={schoolId} />,
     };
 
     const selectedDashboard = dashboardByRole[normalizedRole];

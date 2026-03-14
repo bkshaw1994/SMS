@@ -4,6 +4,7 @@ import AddUserPage from '../pages/AddUserPage';
 import LandingPage from '../pages/LandingPage';
 import RoleLandingPage from '../pages/RoleLandingPage';
 import SchoolDetailsPage from '../pages/SchoolDetailsPage';
+import TeacherSectionStudentsPage from '../pages/TeacherSectionStudentsPage';
 import UserProfilePage from '../pages/UserProfilePage';
 
 function AppRoutes() {
@@ -14,6 +15,7 @@ function AppRoutes() {
                 <Route path="/school/:schoolId" element={<SchoolDetailsPage />} />
                 <Route path="/school/:schoolId/:role/:userName" element={<RoleLandingPage />} />
                 <Route path="/school/:schoolId/:role/:userName/add-user" element={<AddUserPage />} />
+                <Route path="/school/:schoolId/:role/:userName/sections/:sectionId/students" element={<TeacherSectionStudentsPage />} />
                 <Route path="/school/:schoolId/:role/:userName/profile" element={<UserProfilePage />} />
             </Routes>
         </BrowserRouter>
