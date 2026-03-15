@@ -55,6 +55,36 @@ type AddUserResponse = {
   user?: AddUserPayload;
 };
 
+type AddItAdminClassRequest = {
+  class_name: number | string;
+};
+
+type AddItAdminClassResponse = {
+  success: boolean;
+  message: string;
+  class?: {
+    class_id: string;
+    class_name: string;
+  };
+};
+
+type AddItAdminSectionRequest = {
+  teacher_id: string;
+  class_id: string;
+  section_name: string;
+};
+
+type AddItAdminSectionResponse = {
+  success: boolean;
+  message: string;
+  section?: {
+    section_id: string;
+    class_id: string;
+    teacher_id: string;
+    section_name: string;
+  };
+};
+
 type ItAdminUser = {
   name: string;
   email: string;
@@ -72,6 +102,7 @@ type ItAdminUsersResponse = {
 type TeacherAssignedClassApiItem =
   | string
   | {
+      class_id?: unknown;
       section_id?: unknown;
       sectionId?: unknown;
       class_name?: unknown;
@@ -82,18 +113,41 @@ type TeacherAssignedClassApiItem =
       subject?: unknown;
     };
 
+type TeacherApiItem =
+  | string
+  | {
+      teacher_id?: unknown;
+      name?: unknown;
+      full_name?: unknown;
+      email?: unknown;
+    };
+
 type TeacherClassesAssignedApiResponse =
   | TeacherAssignedClassApiItem[]
   | {
       teacherId?: unknown;
       classes?: TeacherAssignedClassApiItem[];
+      teachers?: TeacherApiItem[];
+      schoolCode?: unknown;
+      school_id?: unknown;
     };
 
 export type TeacherAssignedClass = {
+  classId: string;
   className: string;
   sectionId: string;
   sectionName: string;
   subjectName: string;
+};
+
+export type SchoolClassesAndTeachers = {
+  schoolCode: string;
+  classes: TeacherAssignedClass[];
+  teachers: Array<{
+    teacherId: string;
+    name: string;
+    email: string;
+  }>;
 };
 
 type TeacherSectionStudentApiItem =
@@ -122,6 +176,160 @@ export type TeacherSectionStudent = {
   email: string;
   rollNo: string;
 };
+
+function parseTeacherAssignedClasses(
+  payload: TeacherClassesAssignedApiResponse,
+): TeacherAssignedClass[] {
+  const rawClasses = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.classes)
+      ? payload.classes
+      : [];
+
+  return rawClasses
+    .map((item): TeacherAssignedClass | null => {
+      if (typeof item === "string") {
+        const className = item.trim();
+        if (!className) {
+          return null;
+        }
+
+        return {
+          classId: "",
+          className,
+          sectionId: "",
+          sectionName: "",
+          subjectName: "",
+        };
+      }
+
+      if (item && typeof item === "object") {
+        const className =
+          typeof item.class_name === "string"
+            ? item.class_name.trim()
+            : typeof item.className === "string"
+              ? item.className.trim()
+              : "";
+        const classId =
+          typeof item.class_id === "string" || typeof item.class_id === "number"
+            ? String(item.class_id).trim()
+            : "";
+        const sectionName =
+          typeof item.section_name === "string"
+            ? item.section_name.trim()
+            : typeof item.section === "string"
+              ? item.section.trim()
+              : "";
+        const sectionId =
+          typeof item.section_id === "string" ||
+          typeof item.section_id === "number"
+            ? String(item.section_id).trim()
+            : typeof item.sectionId === "string" ||
+                typeof item.sectionId === "number"
+              ? String(item.sectionId).trim()
+              : sectionName;
+        const subjectName =
+          typeof item.subject_name === "string"
+            ? item.subject_name.trim()
+            : typeof item.subject === "string"
+              ? item.subject.trim()
+              : "";
+
+        if (!className && !sectionName && !subjectName) {
+          return null;
+        }
+
+        return {
+          classId,
+          className,
+          sectionId,
+          sectionName,
+          subjectName,
+        };
+      }
+
+      return null;
+    })
+    .filter((item): item is TeacherAssignedClass => item !== null);
+}
+
+function parseTeacherItems(
+  payload: TeacherClassesAssignedApiResponse,
+): Array<{ teacherId: string; name: string; email: string }> {
+  const rawTeachers =
+    payload && !Array.isArray(payload) && Array.isArray(payload.teachers)
+      ? payload.teachers
+      : [];
+
+  const teachers = rawTeachers
+    .map((item) => {
+      if (typeof item === "string") {
+        const name = item.trim();
+        if (!name) {
+          return null;
+        }
+
+        return {
+          teacherId: name,
+          name,
+          email: "",
+        };
+      }
+
+      if (item && typeof item === "object") {
+        const teacherId =
+          typeof item.teacher_id === "string" ||
+          typeof item.teacher_id === "number"
+            ? String(item.teacher_id).trim()
+            : "";
+        const email = typeof item.email === "string" ? item.email.trim() : "";
+
+        if (typeof item.name === "string") {
+          const name = item.name.trim();
+          if (!name) {
+            return null;
+          }
+
+          return {
+            teacherId: teacherId || email || name,
+            name,
+            email,
+          };
+        }
+
+        if (typeof item.full_name === "string") {
+          const name = item.full_name.trim();
+          if (!name) {
+            return null;
+          }
+
+          return {
+            teacherId: teacherId || email || name,
+            name,
+            email,
+          };
+        }
+      }
+
+      return null;
+    })
+    .filter(
+      (item): item is { teacherId: string; name: string; email: string } =>
+        item !== null,
+    );
+
+  const uniqueByTeacherId = new Map<
+    string,
+    { teacherId: string; name: string; email: string }
+  >();
+  teachers.forEach((item) => {
+    if (!uniqueByTeacherId.has(item.teacherId)) {
+      uniqueByTeacherId.set(item.teacherId, item);
+    }
+  });
+
+  return Array.from(uniqueByTeacherId.values());
+}
 
 export const schoolApi = createApi({
   reducerPath: "schoolApi",
@@ -200,83 +408,70 @@ export const schoolApi = createApi({
         body: payload,
       }),
     }),
+    addItAdminClass: builder.mutation<
+      AddItAdminClassResponse,
+      AddItAdminClassRequest
+    >({
+      query: (payload) => ({
+        url: "/itadmin/classes",
+        method: "POST",
+        body: payload,
+      }),
+    }),
+    addItAdminSection: builder.mutation<
+      AddItAdminSectionResponse,
+      AddItAdminSectionRequest
+    >({
+      query: (payload) => ({
+        url: "/itadmin/sections",
+        method: "POST",
+        body: payload,
+      }),
+    }),
     getItAdminUsers: builder.query<ItAdminUsersResponse, void>({
       query: () => ({
         url: "/itadmin/users",
         method: "GET",
       }),
     }),
-    getTeacherClassesAssigned: builder.query<TeacherAssignedClass[], void>({
-      query: () => ({
+    getTeacherClassesAssigned: builder.query<
+      TeacherAssignedClass[],
+      string | void
+    >({
+      query: (schoolId) => ({
         url: "/teacher/classes-assigned",
         method: "GET",
+        params: schoolId ? { school_id: schoolId } : undefined,
+      }),
+      transformResponse: (payload: TeacherClassesAssignedApiResponse) =>
+        parseTeacherAssignedClasses(payload),
+    }),
+    getSchoolClassesAndTeachers: builder.query<
+      SchoolClassesAndTeachers,
+      string | void
+    >({
+      query: (schoolId) => ({
+        url: "/teacher/classes-assigned",
+        method: "GET",
+        params: schoolId ? { school_id: schoolId } : undefined,
       }),
       transformResponse: (payload: TeacherClassesAssignedApiResponse) => {
-        const rawClasses = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.classes)
-            ? payload.classes
-            : [];
+        const schoolCode =
+          payload &&
+          !Array.isArray(payload) &&
+          typeof payload.schoolCode === "string"
+            ? payload.schoolCode.trim().toUpperCase()
+            : payload &&
+                !Array.isArray(payload) &&
+                typeof payload.school_id === "string"
+              ? payload.school_id.trim().toUpperCase()
+              : "";
 
-        return rawClasses
-          .map((item): TeacherAssignedClass | null => {
-            if (typeof item === "string") {
-              const className = item.trim();
-              if (!className) {
-                return null;
-              }
-
-              return {
-                className,
-                sectionId: "",
-                sectionName: "",
-                subjectName: "",
-              };
-            }
-
-            if (item && typeof item === "object") {
-              const className =
-                typeof item.class_name === "string"
-                  ? item.class_name.trim()
-                  : typeof item.className === "string"
-                    ? item.className.trim()
-                    : "";
-              const sectionName =
-                typeof item.section_name === "string"
-                  ? item.section_name.trim()
-                  : typeof item.section === "string"
-                    ? item.section.trim()
-                    : "";
-              const sectionId =
-                typeof item.section_id === "string" ||
-                typeof item.section_id === "number"
-                  ? String(item.section_id).trim()
-                  : typeof item.sectionId === "string" ||
-                      typeof item.sectionId === "number"
-                    ? String(item.sectionId).trim()
-                    : sectionName;
-              const subjectName =
-                typeof item.subject_name === "string"
-                  ? item.subject_name.trim()
-                  : typeof item.subject === "string"
-                    ? item.subject.trim()
-                    : "";
-
-              if (!className && !sectionName && !subjectName) {
-                return null;
-              }
-
-              return {
-                className,
-                sectionId,
-                sectionName,
-                subjectName,
-              };
-            }
-
-            return null;
-          })
-          .filter((item): item is TeacherAssignedClass => item !== null);
+        return {
+          schoolCode,
+          classes: parseTeacherAssignedClasses(payload),
+          teachers: parseTeacherItems(payload),
+        };
       },
     }),
     getTeacherSectionStudents: builder.query<TeacherSectionStudent[], string>({
@@ -361,7 +556,10 @@ export const {
   useLogoutMutation,
   useGetRolesQuery,
   useAddUserMutation,
+  useAddItAdminClassMutation,
+  useAddItAdminSectionMutation,
   useGetItAdminUsersQuery,
   useGetTeacherClassesAssignedQuery,
+  useGetSchoolClassesAndTeachersQuery,
   useGetTeacherSectionStudentsQuery,
 } = schoolApi;

@@ -20,7 +20,7 @@ type DashboardProps = {
 function TeacherDashboard({ schoolId }: DashboardProps) {
     const navigate = useNavigate();
     const { role = 'teacher', userName = 'user' } = useParams();
-    const { data, isLoading, error } = useGetTeacherClassesAssignedQuery();
+    const { data, isLoading, error } = useGetTeacherClassesAssignedQuery(schoolId);
     const classes = data ?? [];
 
     const handleOpenSectionStudents = (sectionId: string) => {

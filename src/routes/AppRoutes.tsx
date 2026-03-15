@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import AddSectionClassPage from '../pages/AddSectionClassPage';
 import AddUserPage from '../pages/AddUserPage';
 import LandingPage from '../pages/LandingPage';
 import RoleLandingPage from '../pages/RoleLandingPage';
@@ -15,6 +16,7 @@ function AppRoutes() {
                 <Route path="/school/:schoolId" element={<SchoolDetailsPage />} />
                 <Route path="/school/:schoolId/:role/:userName" element={<RoleLandingPage />} />
                 <Route path="/school/:schoolId/:role/:userName/add-user" element={<AddUserPage />} />
+                <Route path="/school/:schoolId/:role/:userName/add-section-class" element={<AddSectionClassPage />} />
                 <Route path="/school/:schoolId/:role/:userName/sections/:sectionId/students" element={<TeacherSectionStudentsPage />} />
                 <Route path="/school/:schoolId/:role/:userName/profile" element={<UserProfilePage />} />
             </Routes>
