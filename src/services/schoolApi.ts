@@ -69,6 +69,12 @@ type ItAdminUsersResponse = {
   users: ItAdminUser[];
 };
 
+type DashboardOverviewResponse = {
+  success: boolean;
+  role: string;
+  data: Record<string, unknown>;
+};
+
 export const schoolApi = createApi({
   reducerPath: "schoolApi",
   baseQuery: fetchBaseQuery({
@@ -152,6 +158,12 @@ export const schoolApi = createApi({
         method: "GET",
       }),
     }),
+    getDashboardOverview: builder.query<DashboardOverviewResponse, void>({
+      query: () => ({
+        url: "/dashboard/overview",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -162,4 +174,5 @@ export const {
   useGetRolesQuery,
   useAddUserMutation,
   useGetItAdminUsersQuery,
+  useGetDashboardOverviewQuery,
 } = schoolApi;

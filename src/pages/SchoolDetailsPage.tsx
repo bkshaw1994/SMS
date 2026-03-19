@@ -74,9 +74,7 @@ function SchoolDetailsPage() {
                 }),
             );
 
-            const rolePath = response.role.toLowerCase();
-            const userName = response.email.split('@')[0] || 'user';
-            navigate(`/school/${response.schoolCode}/${rolePath}/${userName}`);
+            navigate('/overview', { replace: true });
         } catch (requestError: any) {
             setFormError(getApiErrorMessage(requestError));
         }

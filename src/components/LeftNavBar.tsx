@@ -41,6 +41,11 @@ function LeftNavBar({ schoolId, role, userName = '' }: LeftNavBarProps) {
     const canAccessAddUser = ['superadmin', 'itadmin', 'owner'].includes(normalizedRole);
     const navItems = [
         {
+            to: '/overview',
+            label: 'Overview',
+            icon: LayoutDashboard,
+        },
+        {
             to: `${basePath}/${normalizedRole}/${userName || 'user'}`,
             label: 'Dashboard',
             icon: LayoutDashboard,
