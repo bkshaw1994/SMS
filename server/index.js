@@ -12,6 +12,16 @@ const revokedTokens = new Map();
 const users = [];
 const classAssignments = [];
 const sectionAssignments = [];
+const authorizedRouteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please try again in a minute.",
+  },
+});
 
 function seedClassAssignmentsForSchool(schoolCode) {
   const normalizedSchoolCode = String(schoolCode || "")
@@ -420,7 +430,7 @@ app.get("/itadmin/users", apiLimiter, (req, res) => {
   });
 });
 
-app.post("/itadmin/classes", apiLimiter, (req, res) => {
+app.post("/itadmin/classes", authorizedRouteLimiter, (req, res) => {
   const verification = verifyActiveToken(req);
   if (verification.error) {
     return res.status(verification.error.status).json({
@@ -483,7 +493,7 @@ app.post("/itadmin/classes", apiLimiter, (req, res) => {
   });
 });
 
-app.post("/itadmin/sections", apiLimiter, (req, res) => {
+app.post("/itadmin/sections", authorizedRouteLimiter, (req, res) => {
   const verification = verifyActiveToken(req);
   if (verification.error) {
     return res.status(verification.error.status).json({
@@ -567,7 +577,7 @@ app.post("/itadmin/sections", apiLimiter, (req, res) => {
   });
 });
 
-app.get("/teacher/classes-assigned", apiLimiter, (req, res) => {
+app.get("/teacher/classes-assigned", authorizedRouteLimiter, (req, res) => {
   const verification = verifyActiveToken(req);
   if (verification.error) {
     return res.status(verification.error.status).json({
