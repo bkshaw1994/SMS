@@ -183,6 +183,32 @@ const store = configureStore({
 app.use(cors());
 app.use(express.json());
 
+// Rate limiters for security
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: "Too many login attempts, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per window
+  message:
+    "Too many requests to this authentication endpoint, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per window
+  message: "Too many requests to this API endpoint, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -232,7 +258,7 @@ app.post("/school/validate-code", (req, res) => {
   });
 });
 
-app.post("/auth/validate-login", (req, res) => {
+app.post("/auth/validate-login", loginLimiter, (req, res) => {
   const valid = Boolean(req.body?.valid);
   const schoolCode = String(req.body?.schoolCode ?? "")
     .trim()
@@ -282,7 +308,7 @@ app.post("/auth/validate-login", (req, res) => {
   });
 });
 
-app.post("/auth/logout", (req, res) => {
+app.post("/auth/logout", authLimiter, (req, res) => {
   const verification = verifyActiveToken(req);
   if (verification.error) {
     return res.status(verification.error.status).json({
@@ -304,7 +330,7 @@ app.post("/auth/logout", (req, res) => {
   });
 });
 
-app.post("/users", (req, res) => {
+app.post("/users", apiLimiter, (req, res) => {
   const verification = verifyActiveToken(req);
   if (verification.error) {
     return res.status(verification.error.status).json({
@@ -374,7 +400,7 @@ app.post("/users", (req, res) => {
   });
 });
 
-app.get("/itadmin/users", (req, res) => {
+app.get("/itadmin/users", apiLimiter, (req, res) => {
   const verification = verifyActiveToken(req);
   if (verification.error) {
     return res.status(verification.error.status).json({

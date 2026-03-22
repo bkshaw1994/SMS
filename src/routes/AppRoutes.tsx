@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AddSectionClassPage from '../pages/AddSectionClassPage';
 import AddUserPage from '../pages/AddUserPage';
 import LandingPage from '../pages/LandingPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import RoleLandingPage from '../pages/RoleLandingPage';
 import SchoolDetailsPage from '../pages/SchoolDetailsPage';
 import TeacherSectionStudentsPage from '../pages/TeacherSectionStudentsPage';
@@ -13,6 +14,8 @@ function AppRoutes() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LandingPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/school/:schoolId" element={<SchoolDetailsPage />} />
                 <Route path="/school/:schoolId/:role/:userName" element={<RoleLandingPage />} />
                 <Route path="/school/:schoolId/:role/:userName/add-user" element={<AddUserPage />} />
