@@ -27,7 +27,12 @@ const fieldSx = {
 
 type ForgotPasswordStep = 'email' | 'otp' | 'done';
 
-function ForgotPasswordPanel({ schoolCode, onCancel }: { schoolCode: string; onCancel: () => void }) {
+type ForgotPasswordPanelProps = Readonly<{
+    schoolCode: string;
+    onCancel: () => void;
+}>;
+
+function ForgotPasswordPanel({ schoolCode, onCancel }: ForgotPasswordPanelProps) {
     const [step, setStep] = useState<ForgotPasswordStep>('email');
     const [fpEmail, setFpEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -302,7 +307,12 @@ function SchoolDetailsPage() {
                         School ID: {schoolId}
                     </Typography>
 
-                    {!showForgotPassword ? (
+                    {showForgotPassword ? (
+                        <ForgotPasswordPanel
+                            schoolCode={normalizedSchoolCode}
+                            onCancel={() => setShowForgotPassword(false)}
+                        />
+                    ) : (
                         <>
                             <Box sx={{ mt: 2, display: 'grid', gap: 1.5 }}>
                                 <TextField
@@ -385,11 +395,6 @@ function SchoolDetailsPage() {
                                 </Box>
                             ) : null}
                         </>
-                    ) : (
-                        <ForgotPasswordPanel
-                            schoolCode={normalizedSchoolCode}
-                            onCancel={() => setShowForgotPassword(false)}
-                        />
                     )}
                 </Paper>
             </Container>
