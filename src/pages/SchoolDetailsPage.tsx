@@ -25,12 +25,46 @@ const fieldSx = {
     },
 };
 
+const primaryButtonSx = { backgroundColor: '#0891b2', '&:hover': { backgroundColor: '#0e7490' } };
+const cancelButtonSx = { color: '#94a3b8', '&:hover': { color: '#cbd5e1' } };
+
 type ForgotPasswordStep = 'email' | 'otp' | 'done';
 
 type ForgotPasswordPanelProps = Readonly<{
     schoolCode: string;
     onCancel: () => void;
 }>;
+
+type FormActionsProps = Readonly<{
+    isSubmitting: boolean;
+    submitLabel: string;
+    submittingLabel: string;
+    onCancel: () => void;
+}>;
+
+function FormActions({ isSubmitting, submitLabel, submittingLabel, onCancel }: FormActionsProps) {
+    return (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : null}
+                sx={primaryButtonSx}
+            >
+                {isSubmitting ? submittingLabel : submitLabel}
+            </Button>
+            <Button
+                type="button"
+                variant="text"
+                onClick={onCancel}
+                sx={cancelButtonSx}
+            >
+                Cancel
+            </Button>
+        </Box>
+    );
+}
 
 function ForgotPasswordPanel({ schoolCode, onCancel }: ForgotPasswordPanelProps) {
     const [step, setStep] = useState<ForgotPasswordStep>('email');
@@ -118,25 +152,12 @@ function ForgotPasswordPanel({ schoolCode, onCancel }: ForgotPasswordPanelProps)
                         sx={fieldSx}
                     />
                     {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={isSubmitting}
-                            startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : null}
-                            sx={{ backgroundColor: '#0891b2', '&:hover': { backgroundColor: '#0e7490' } }}
-                        >
-                            {isSubmitting ? 'Sending…' : 'Send OTP'}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="text"
-                            onClick={onCancel}
-                            sx={{ color: '#94a3b8', '&:hover': { color: '#cbd5e1' } }}
-                        >
-                            Cancel
-                        </Button>
-                    </Box>
+                    <FormActions
+                        isSubmitting={isSubmitting}
+                        submitLabel="Send OTP"
+                        submittingLabel="Sending..."
+                        onCancel={onCancel}
+                    />
                 </Box>
             )}
 
@@ -171,25 +192,12 @@ function ForgotPasswordPanel({ schoolCode, onCancel }: ForgotPasswordPanelProps)
                         sx={fieldSx}
                     />
                     {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={isSubmitting}
-                            startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : null}
-                            sx={{ backgroundColor: '#0891b2', '&:hover': { backgroundColor: '#0e7490' } }}
-                        >
-                            {isSubmitting ? 'Verifying…' : 'Submit OTP'}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="text"
-                            onClick={onCancel}
-                            sx={{ color: '#94a3b8', '&:hover': { color: '#cbd5e1' } }}
-                        >
-                            Cancel
-                        </Button>
-                    </Box>
+                    <FormActions
+                        isSubmitting={isSubmitting}
+                        submitLabel="Submit OTP"
+                        submittingLabel="Verifying..."
+                        onCancel={onCancel}
+                    />
                 </Box>
             )}
 
@@ -341,10 +349,7 @@ function SchoolDetailsPage() {
                                         onClick={handleLoginValidate}
                                         disabled={isLoading}
                                         variant="contained"
-                                        sx={{
-                                            backgroundColor: '#0891b2',
-                                            '&:hover': { backgroundColor: '#0e7490' },
-                                        }}
+                                        sx={primaryButtonSx}
                                     >
                                         {isLoading ? <CircularProgress size={18} sx={{ color: 'inherit' }} /> : 'Validate Login'}
                                     </Button>
