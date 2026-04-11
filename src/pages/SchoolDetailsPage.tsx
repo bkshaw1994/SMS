@@ -10,7 +10,213 @@ import {
     Typography,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
+import { forgotPassword, verifyForgotPasswordOtp } from '../services/authService';
+import { ApiClientError } from '../utils/apiClient';
 import { useValidateLoginMutation } from '../services/schoolApi';
+
+const fieldSx = {
+    '& .MuiInputLabel-root': { color: '#cbd5e1' },
+    '& .MuiInputLabel-root.Mui-focused': { color: '#ffffff' },
+    '& .MuiInputBase-input': { color: '#f8fafc' },
+    '& .MuiOutlinedInput-root': {
+        '& fieldset': { borderColor: 'rgba(148, 163, 184, 0.35)' },
+        '&:hover fieldset': { borderColor: 'rgba(125, 211, 252, 0.6)' },
+        '&.Mui-focused fieldset': { borderColor: '#ffffff' },
+    },
+};
+
+const primaryButtonSx = { backgroundColor: '#0891b2', '&:hover': { backgroundColor: '#0e7490' } };
+const cancelButtonSx = { color: '#94a3b8', '&:hover': { color: '#cbd5e1' } };
+
+type ForgotPasswordStep = 'email' | 'otp' | 'done';
+
+type ForgotPasswordPanelProps = Readonly<{
+    schoolCode: string;
+    onCancel: () => void;
+}>;
+
+type FormActionsProps = Readonly<{
+    isSubmitting: boolean;
+    submitLabel: string;
+    submittingLabel: string;
+    onCancel: () => void;
+}>;
+
+function FormActions({ isSubmitting, submitLabel, submittingLabel, onCancel }: FormActionsProps) {
+    return (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : null}
+                sx={primaryButtonSx}
+            >
+                {isSubmitting ? submittingLabel : submitLabel}
+            </Button>
+            <Button
+                type="button"
+                variant="text"
+                onClick={onCancel}
+                sx={cancelButtonSx}
+            >
+                Cancel
+            </Button>
+        </Box>
+    );
+}
+
+function ForgotPasswordPanel({ schoolCode, onCancel }: ForgotPasswordPanelProps) {
+    const [step, setStep] = useState<ForgotPasswordStep>('email');
+    const [fpEmail, setFpEmail] = useState('');
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
+    const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setErrorMessage('');
+
+        if (!fpEmail.trim()) {
+            setErrorMessage('Email is required.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await forgotPassword(fpEmail.trim(), schoolCode);
+            setSuccessMessage(response.message || 'OTP sent! Check your email.');
+            setStep('otp');
+        } catch (error) {
+            const message =
+                error instanceof ApiClientError ? error.message : 'Unable to send OTP. Please try again.';
+            setErrorMessage(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleOtpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setErrorMessage('');
+
+        if (!otp.trim()) {
+            setErrorMessage('OTP is required.');
+            return;
+        }
+        if (!newPassword.trim()) {
+            setErrorMessage('New password is required.');
+            return;
+        }
+        if (newPassword.length < 8) {
+            setErrorMessage('New password must be at least 8 characters.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setErrorMessage('Passwords do not match.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await verifyForgotPasswordOtp(fpEmail.trim(), schoolCode, otp.trim(), newPassword, confirmPassword);
+            setSuccessMessage(response.message || 'Password reset successfully.');
+            setStep('done');
+        } catch (error) {
+            const message =
+                error instanceof ApiClientError ? error.message : 'Invalid OTP. Please try again.';
+            setErrorMessage(message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" sx={{ color: '#67e8f9', fontWeight: 600, mb: 1 }}>
+                Forgot Password
+            </Typography>
+
+            {step === 'email' && (
+                <Box component="form" onSubmit={handleEmailSubmit} sx={{ display: 'grid', gap: 1.5 }}>
+                    <TextField
+                        label="Registered Email"
+                        type="email"
+                        fullWidth
+                        value={fpEmail}
+                        onChange={(e) => setFpEmail(e.target.value)}
+                        required
+                        sx={fieldSx}
+                    />
+                    {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+                    <FormActions
+                        isSubmitting={isSubmitting}
+                        submitLabel="Send OTP"
+                        submittingLabel="Sending..."
+                        onCancel={onCancel}
+                    />
+                </Box>
+            )}
+
+            {step === 'otp' && (
+                <Box component="form" onSubmit={handleOtpSubmit} sx={{ display: 'grid', gap: 1.5 }}>
+                    <Alert severity="info">{successMessage || 'Check your email for the 6-digit OTP.'}</Alert>
+                    <TextField
+                        label="Enter OTP"
+                        fullWidth
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        required
+                        inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
+                        sx={fieldSx}
+                    />
+                    <TextField
+                        label="New Password"
+                        type="password"
+                        fullWidth
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        sx={fieldSx}
+                    />
+                    <TextField
+                        label="Confirm New Password"
+                        type="password"
+                        fullWidth
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        sx={fieldSx}
+                    />
+                    {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+                    <FormActions
+                        isSubmitting={isSubmitting}
+                        submitLabel="Submit OTP"
+                        submittingLabel="Verifying..."
+                        onCancel={onCancel}
+                    />
+                </Box>
+            )}
+
+            {step === 'done' && (
+                <Box sx={{ display: 'grid', gap: 1.5 }}>
+                    <Alert severity="success">{successMessage || 'Password reset successfully. You can now log in.'}</Alert>
+                    <Button
+                        type="button"
+                        variant="text"
+                        onClick={onCancel}
+                        sx={{ justifySelf: 'start', color: '#67e8f9', '&:hover': { color: '#a5f3fc' } }}
+                    >
+                        Back to Login
+                    </Button>
+                </Box>
+            )}
+        </Box>
+    );
+}
 
 function SchoolDetailsPage() {
     const navigate = useNavigate();
@@ -19,6 +225,7 @@ function SchoolDetailsPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [formError, setFormError] = useState('');
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [validateLogin, { data, error, isLoading }] = useValidateLoginMutation();
 
     const getApiErrorMessage = (requestError: any): string => {
@@ -108,94 +315,92 @@ function SchoolDetailsPage() {
                         School ID: {schoolId}
                     </Typography>
 
-                    <Box sx={{ mt: 2, display: 'grid', gap: 1.5 }}>
-                        <TextField
-                            label="Email"
-                            type="email"
-                            fullWidth
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            variant="outlined"
-                            sx={{
-                                '& .MuiInputLabel-root': { color: '#cbd5e1' },
-                                '& .MuiInputLabel-root.Mui-focused': { color: '#ffffff' },
-                                '& .MuiInputBase-input': { color: '#f8fafc' },
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': { borderColor: 'rgba(148, 163, 184, 0.35)' },
-                                    '&:hover fieldset': { borderColor: 'rgba(125, 211, 252, 0.6)' },
-                                    '&.Mui-focused fieldset': { borderColor: '#ffffff' },
-                                },
-                            }}
+                    {showForgotPassword ? (
+                        <ForgotPasswordPanel
+                            schoolCode={normalizedSchoolCode}
+                            onCancel={() => setShowForgotPassword(false)}
                         />
+                    ) : (
+                        <>
+                            <Box sx={{ mt: 2, display: 'grid', gap: 1.5 }}>
+                                <TextField
+                                    label="Email"
+                                    type="email"
+                                    fullWidth
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                    variant="outlined"
+                                    sx={fieldSx}
+                                />
 
-                        <TextField
-                            label="Password"
-                            type="password"
-                            fullWidth
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            variant="outlined"
-                            sx={{
-                                '& .MuiInputLabel-root': { color: '#cbd5e1' },
-                                '& .MuiInputLabel-root.Mui-focused': { color: '#ffffff' },
-                                '& .MuiInputBase-input': { color: '#f8fafc' },
-                                '& .MuiOutlinedInput-root': {
-                                    '& fieldset': { borderColor: 'rgba(148, 163, 184, 0.35)' },
-                                    '&:hover fieldset': { borderColor: 'rgba(125, 211, 252, 0.6)' },
-                                    '&.Mui-focused fieldset': { borderColor: '#ffffff' },
-                                },
-                            }}
-                        />
+                                <TextField
+                                    label="Password"
+                                    type="password"
+                                    fullWidth
+                                    value={password}
+                                    onChange={(event) => setPassword(event.target.value)}
+                                    variant="outlined"
+                                    sx={fieldSx}
+                                />
 
-                        <Button
-                            type="button"
-                            onClick={handleLoginValidate}
-                            disabled={isLoading}
-                            variant="contained"
-                            sx={{
-                                justifySelf: 'start',
-                                backgroundColor: '#0891b2',
-                                '&:hover': { backgroundColor: '#0e7490' },
-                            }}
-                        >
-                            Validate Login
-                        </Button>
-                    </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Button
+                                        type="button"
+                                        onClick={handleLoginValidate}
+                                        disabled={isLoading}
+                                        variant="contained"
+                                        sx={primaryButtonSx}
+                                    >
+                                        {isLoading ? <CircularProgress size={18} sx={{ color: 'inherit' }} /> : 'Validate Login'}
+                                    </Button>
 
-                    {formError ? (
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                            {formError}
-                        </Alert>
-                    ) : null}
+                                    <Button
+                                        type="button"
+                                        variant="text"
+                                        onClick={() => { setShowForgotPassword(true); setFormError(''); }}
+                                        sx={{ color: '#67e8f9', fontSize: '0.8rem', '&:hover': { color: '#a5f3fc' } }}
+                                    >
+                                        Forgot password?
+                                    </Button>
+                                </Box>
+                            </Box>
 
-                    {isLoading ? (
-                        <Box sx={{ mt: 2 }}>
-                            <CircularProgress size={20} sx={{ color: '#67e8f9' }} />
-                        </Box>
-                    ) : null}
+                            {formError ? (
+                                <Alert severity="error" sx={{ mt: 2 }}>
+                                    {formError}
+                                </Alert>
+                            ) : null}
 
-                    {!isLoading && error ? (
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                            {(error as any)?.data?.message || 'Login validation failed.'}
-                        </Alert>
-                    ) : null}
+                            {isLoading ? (
+                                <Box sx={{ mt: 2 }}>
+                                    <CircularProgress size={20} sx={{ color: '#67e8f9' }} />
+                                </Box>
+                            ) : null}
 
-                    {data?.valid ? (
-                        <Box sx={{ mt: 2 }}>
-                            <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-                                Email: {data.email}
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
-                                Role: {data.role}
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{ mt: 1, color: '#67e8f9', wordBreak: 'break-all' }}
-                            >
-                                JWT: {data.token}
-                            </Typography>
-                        </Box>
-                    ) : null}
+                            {!isLoading && error ? (
+                                <Alert severity="error" sx={{ mt: 2 }}>
+                                    {(error as any)?.data?.message || 'Login validation failed.'}
+                                </Alert>
+                            ) : null}
+
+                            {data?.valid ? (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
+                                        Email: {data.email}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
+                                        Role: {data.role}
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ mt: 1, color: '#67e8f9', wordBreak: 'break-all' }}
+                                    >
+                                        JWT: {data.token}
+                                    </Typography>
+                                </Box>
+                            ) : null}
+                        </>
+                    )}
                 </Paper>
             </Container>
         </Box>
